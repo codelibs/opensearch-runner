@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -272,23 +273,19 @@ public class OpenSearchRunner implements Closeable {
      * Delete all configuration files and directories.
      */
     public void clean() {
+        LogManager.shutdown();
         final Path bPath = FileSystems.getDefault().getPath(basePath);
+        final CleanUpFileVisitor visitor = new CleanUpFileVisitor();
         try {
-            final CleanUpFileVisitor visitor = new CleanUpFileVisitor();
             Files.walkFileTree(bPath, visitor);
-            if (!visitor.hasErrors()) {
-                print("Deleted " + basePath);
-                return;
+            if (visitor.hasErrors()) {
+                throw new OpenSearchRunnerException(visitor.getErrors().stream()
+                        .map(e -> e.getLocalizedMessage())
+                        .collect(Collectors.joining("\n")));
             }
-            if (useLogger && logger.isDebugEnabled()) {
-                for (final Throwable t : visitor.getErrors()) {
-                    logger.debug("Could not delete files/directories.", t);
-                }
-            }
-        } catch (final Exception e) {
-            print(e.getMessage() + " Retring to delete it.");
+        } catch (IOException e) {
+            throw new OpenSearchRunnerException("Failed to delete " + bPath, e);
         }
-        print("Failed to delete " + basePath + " in this process.");
     }
 
     /**

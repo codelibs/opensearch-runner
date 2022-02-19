@@ -20,11 +20,12 @@ import static org.codelibs.opensearch.runner.OpenSearchRunner.newConfigs;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.util.Map;
 
 import org.codelibs.curl.CurlException;
 import org.codelibs.curl.CurlResponse;
-import org.codelibs.opensearch.runner.OpenSearchRunner;
 import org.codelibs.opensearch.runner.net.OpenSearchCurl;
 import org.opensearch.action.DocWriteResponse.Result;
 import org.opensearch.action.admin.indices.alias.get.GetAliasesResponse;
@@ -74,6 +75,8 @@ public class OpenSearchRunnerTest extends TestCase {
         runner.close();
         // delete all files
         runner.clean();
+        assertFalse("Check if " + runner.basePath + " is deleted", Files
+                .exists(FileSystems.getDefault().getPath(runner.basePath)));
     }
 
     public void test_runCluster() throws Exception {
