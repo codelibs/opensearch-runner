@@ -145,9 +145,11 @@ public class OpenSearchRunner implements Closeable {
 
     protected static final String CONFIG_DIR = "config";
 
-    protected List<Node> nodeList = new ArrayList<>();
+    protected List<OpenSearchRunnerNode> nodeList = new ArrayList<>();
 
     protected List<Environment> envList = new ArrayList<>();
+
+    protected Collection<Class<? extends Plugin>> moduleList = new ArrayList<>();
 
     protected Collection<Class<? extends Plugin>> pluginList = new ArrayList<>();
 
@@ -340,7 +342,7 @@ public class OpenSearchRunner implements Closeable {
             Class<? extends Plugin> clazz;
             try {
                 clazz = Class.forName(moduleType).asSubclass(Plugin.class);
-                pluginList.add(clazz);
+                moduleList.add(clazz);
             } catch (final ClassNotFoundException e) {
                 logger.debug("{} is not found.", moduleType, e);
             }
@@ -412,7 +414,31 @@ public class OpenSearchRunner implements Closeable {
             }
         }
 
+        final Collection<Class<? extends Plugin>> moduleAndPluginList = new ArrayList<>();
         try {
+            final String modulePath = builder.get("path.modules");
+            if (modulePath != null) {
+                final Path sourcePath = Paths.get(modulePath);
+                final Path targetPath = homePath.resolve("modules");
+                Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                        Files.createDirectories(targetPath.resolve(sourcePath.relativize(dir)));
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+                        Files.copy(file, targetPath.resolve(sourcePath.relativize(file)), StandardCopyOption.REPLACE_EXISTING);
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+                builder.remove("path.modules");
+            } else {
+                moduleAndPluginList.addAll(moduleList);
+            }
+            moduleAndPluginList.addAll(pluginList);
+
             final String pluginPath = builder.get("path.plugins");
             if (pluginPath != null) {
                 final Path sourcePath = Paths.get(pluginPath);
@@ -459,7 +485,7 @@ public class OpenSearchRunner implements Closeable {
             createDir(environment.modulesFile());
             createDir(environment.pluginsFile());
 
-            final Node node = new OpenSearchRunnerNode(environment, pluginList);
+            final OpenSearchRunnerNode node = new OpenSearchRunnerNode(environment, moduleAndPluginList);
             node.start();
             nodeList.add(node);
             envList.add(environment);
@@ -519,7 +545,7 @@ public class OpenSearchRunner implements Closeable {
         if ((i >= nodeList.size()) || !nodeList.get(i).isClosed()) {
             return false;
         }
-        final Node node = new OpenSearchRunnerNode(envList.get(i), pluginList);
+        final OpenSearchRunnerNode node = new OpenSearchRunnerNode(envList.get(i), nodeList.get(i).getPlugins());
         try {
             node.start();
             nodeList.set(i, node);
