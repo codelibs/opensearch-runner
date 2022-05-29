@@ -26,7 +26,8 @@ public class OpenSearchRunnerNode extends Node {
 
     private final Collection<Class<? extends Plugin>> plugins;
 
-    public OpenSearchRunnerNode(final Environment tmpEnv, final Collection<Class<? extends Plugin>> classpathPlugins) {
+    public OpenSearchRunnerNode(final Environment tmpEnv,
+            final Collection<Class<? extends Plugin>> classpathPlugins) {
         super(tmpEnv, classpathPlugins, true);
         this.plugins = classpathPlugins;
     }
@@ -36,7 +37,8 @@ public class OpenSearchRunnerNode extends Node {
     }
 
     @Override
-    protected void configureNodeAndClusterIdStateListener(final ClusterService clusterService) {
+    protected void configureNodeAndClusterIdStateListener(
+            final ClusterService clusterService) {
         // nothing
     }
 }

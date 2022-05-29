@@ -23,7 +23,8 @@ public class OpenSearchRunnerException extends RuntimeException {
 
     private final transient ActionResponse response;
 
-    public OpenSearchRunnerException(final String message, final Throwable cause) {
+    public OpenSearchRunnerException(final String message,
+            final Throwable cause) {
         super(message, cause);
         this.response = null;
     }
