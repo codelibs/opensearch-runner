@@ -497,7 +497,7 @@ public class OpenSearchRunner implements Closeable {
             putIfAbsent(builder, "http.port", String.valueOf(httpPort));
             putIfAbsent(builder, "index.store.type", indexStoreType);
             if (!builder.keys().contains("node.roles")) {
-                builder.putList("node.roles", "master", "data");
+                builder.putList("node.roles", "cluster_manager", "data");
             }
 
             print("Node Name:      " + nodeName);
