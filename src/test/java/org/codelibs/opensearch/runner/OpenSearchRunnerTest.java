@@ -61,7 +61,7 @@ public class OpenSearchRunnerTest extends TestCase {
                 settingsBuilder.put("http.cors.enabled", true);
                 settingsBuilder.put("http.cors.allow-origin", "*");
                 settingsBuilder.putList("discovery.seed_hosts", "127.0.0.1:9301", "127.0.0.1:9302");
-                settingsBuilder.putList("cluster.initial_master_nodes", "127.0.0.1:9301");
+                settingsBuilder.putList("cluster.initial_cluster_manager_nodes", "127.0.0.1:9301");
             }
         }).build(newConfigs().clusterName(clusterName).numOfNode(NUM_OF_NODES));
 
