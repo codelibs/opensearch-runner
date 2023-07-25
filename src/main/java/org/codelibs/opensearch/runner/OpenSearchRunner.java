@@ -85,7 +85,6 @@ import org.opensearch.cluster.ClusterState;
 import org.opensearch.cluster.health.ClusterHealthStatus;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.Priority;
-import org.opensearch.common.Strings;
 import org.opensearch.common.logging.LogConfigurator;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.XContentType;
@@ -324,8 +323,10 @@ public class OpenSearchRunner implements Closeable {
             try {
                 parser.parseArgument(args);
             } catch (final CmdLineException e) {
-                throw new OpenSearchRunnerException("Failed to parse args: "
-                        + Strings.arrayToDelimitedString(args, " "));
+                throw new OpenSearchRunnerException(
+                        "Failed to parse args: " + args != null
+                                ? String.join(" ", args)
+                                : "");
             }
         }
 
