@@ -7,7 +7,7 @@ You can use OpenSearch Runner as Embedded OpenSearch in your application.
 
 ## Version
 
-[Versions in Maven Repository](https://repo1.maven.org/maven2/org/codelibs/opensearch-runner/)
+[Versions in Maven Repository](https://repo1.maven.org/maven2/org/codelibs/opensearch/opensearch-runner/)
 
 ## Run on Your Application
 
