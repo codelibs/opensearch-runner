@@ -15,7 +15,7 @@
  */
 package org.codelibs.opensearch.runner;
 
-import org.opensearch.action.ActionResponse;
+import org.opensearch.core.action.ActionResponse;
 
 public class OpenSearchRunnerException extends RuntimeException {
 
