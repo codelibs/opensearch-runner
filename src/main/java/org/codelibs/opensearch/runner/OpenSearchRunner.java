@@ -121,7 +121,7 @@ public class OpenSearchRunner implements Closeable {
     protected static final String[] MODULE_TYPES = { //
             "org.opensearch.search.aggregations.matrix.MatrixAggregationPlugin", //
             "org.opensearch.analysis.common.CommonAnalysisPlugin", //
-            // "org.opensearch.geo.GeoPlugin", //
+            "org.opensearch.geo.GeoModulePlugin", //
             "org.opensearch.ingest.common.IngestCommonPlugin", //
             // "org.opensearch.ingest.geoip.IngestGeoIpPlugin", //
             "org.opensearch.ingest.useragent.IngestUserAgentPlugin", //

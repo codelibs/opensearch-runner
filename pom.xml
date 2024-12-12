@@ -160,6 +160,11 @@
 		</dependency>
 		<dependency>
 			<groupId>org.opensearch.plugin</groupId>
+			<artifactId>geo</artifactId>
+			<version>${opensearch.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.opensearch.plugin</groupId>
 			<artifactId>ingest-common</artifactId>
 			<version>${opensearch.version}</version>
 		</dependency>
