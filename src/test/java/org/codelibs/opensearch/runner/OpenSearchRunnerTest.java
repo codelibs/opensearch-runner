@@ -95,9 +95,9 @@ public class OpenSearchRunnerTest extends TestCase {
         assertNotNull(runner.client());
 
         // check if a master node exists
-        assertNotNull(runner.masterNode());
-        assertNotNull(runner.nonMasterNode());
-        assertFalse(runner.masterNode() == runner.nonMasterNode());
+        assertNotNull(runner.clusterManagerNode());
+        assertNotNull(runner.nonClusterManagerNode());
+        assertFalse(runner.clusterManagerNode() == runner.nonClusterManagerNode());
 
         // check if a cluster service exists
         assertNotNull(runner.clusterService());
@@ -174,19 +174,19 @@ public class OpenSearchRunnerTest extends TestCase {
         // search 1000 documents
         {
             final SearchResponse searchResponse = runner.search(index, null, null, 0, 10);
-            assertEquals(1000, searchResponse.getHits().getTotalHits().value);
+            assertEquals(1000, searchResponse.getHits().getTotalHits().value());
             assertEquals(10, searchResponse.getHits().getHits().length);
         }
 
         {
             final SearchResponse searchResponse = runner.search(index, QueryBuilders.matchAllQuery(), SortBuilders.fieldSort("id"), 0, 10);
-            assertEquals(1000, searchResponse.getHits().getTotalHits().value);
+            assertEquals(1000, searchResponse.getHits().getTotalHits().value());
             assertEquals(10, searchResponse.getHits().getHits().length);
         }
 
         {
             final SearchResponse searchResponse = runner.count(index);
-            assertEquals(1000, searchResponse.getHits().getTotalHits().value);
+            assertEquals(1000, searchResponse.getHits().getTotalHits().value());
         }
 
         // delete 1 document
@@ -195,7 +195,7 @@ public class OpenSearchRunnerTest extends TestCase {
 
         {
             final SearchResponse searchResponse = runner.search(index, null, null, 0, 10);
-            assertEquals(999, searchResponse.getHits().getTotalHits().value);
+            assertEquals(999, searchResponse.getHits().getTotalHits().value());
             assertEquals(10, searchResponse.getHits().getHits().length);
         }
 

@@ -52,6 +52,7 @@ import org.opensearch.action.admin.indices.alias.IndicesAliasesRequestBuilder;
 import org.opensearch.action.admin.indices.alias.get.GetAliasesRequestBuilder;
 import org.opensearch.action.admin.indices.alias.get.GetAliasesResponse;
 import org.opensearch.action.admin.indices.close.CloseIndexRequestBuilder;
+import org.opensearch.action.admin.indices.close.CloseIndexResponse;
 import org.opensearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.opensearch.action.admin.indices.create.CreateIndexResponse;
 import org.opensearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
@@ -75,10 +76,7 @@ import org.opensearch.action.index.IndexResponse;
 import org.opensearch.action.search.SearchRequestBuilder;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.support.WriteRequest.RefreshPolicy;
-import org.opensearch.action.support.master.AcknowledgedResponse;
-import org.opensearch.client.AdminClient;
-import org.opensearch.client.Client;
-import org.opensearch.client.Requests;
+import org.opensearch.action.support.clustermanager.AcknowledgedResponse;
 import org.opensearch.cluster.ClusterState;
 import org.opensearch.cluster.health.ClusterHealthStatus;
 import org.opensearch.cluster.service.ClusterService;
@@ -98,6 +96,9 @@ import org.opensearch.node.NodeValidationException;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.search.sort.SortBuilder;
 import org.opensearch.search.sort.SortBuilders;
+import org.opensearch.transport.client.AdminClient;
+import org.opensearch.transport.client.Client;
+import org.opensearch.transport.client.Requests;
 
 import com.fasterxml.jackson.dataformat.smile.SmileConstants;
 
@@ -119,24 +120,26 @@ public class OpenSearchRunner implements Closeable {
     protected static final String ELASTICSEARCH_YAML = "opensearch.yml";
 
     protected static final String[] MODULE_TYPES = { //
-            "org.opensearch.search.aggregations.matrix.MatrixAggregationPlugin", //
-            "org.opensearch.analysis.common.CommonAnalysisPlugin", //
+            "org.opensearch.search.aggregations.matrix.MatrixAggregationModulePlugin", //
+            "org.opensearch.analysis.common.CommonAnalysisModulePlugin", //
+            "org.opensearch.cache.common.tier.TieredSpilloverCachePlugin", //
             "org.opensearch.geo.GeoModulePlugin", //
-            "org.opensearch.ingest.common.IngestCommonPlugin", //
-            // "org.opensearch.ingest.geoip.IngestGeoIpPlugin", //
-            "org.opensearch.ingest.useragent.IngestUserAgentPlugin", //
-            "org.opensearch.dashboards.OpenSearchDashboardsPlugin", //
-            "org.opensearch.script.expression.ExpressionPlugin", //
-            "org.opensearch.script.mustache.MustachePlugin", //
-            "org.opensearch.painless.PainlessPlugin", //
-            "org.opensearch.index.mapper.MapperExtrasPlugin", //
-            "org.opensearch.join.ParentJoinPlugin", //
-            "org.opensearch.percolator.PercolatorPlugin", //
-            "org.opensearch.index.rankeval.RankEvalPlugin", //
-            "org.opensearch.index.reindex.ReindexPlugin", //
-            "org.opensearch.plugin.repository.url.URLRepositoryPlugin", //
-            // "org.opensearch.tasksplugin.TasksPlugin", //
-            "org.opensearch.transport.Netty4Plugin" //
+            "org.opensearch.ingest.common.IngestCommonModulePlugin", //
+            // "org.opensearch.ingest.geoip.IngestGeoIpModulePlugin", //
+            "org.opensearch.ingest.useragent.IngestUserAgentModulePlugin", //
+            "org.opensearch.script.expression.ExpressionModulePlugin", //
+            "org.opensearch.script.mustache.MustacheModulePlugin", //
+            "org.opensearch.painless.PainlessModulePlugin", //
+            "org.opensearch.index.mapper.MapperExtrasModulePlugin", //
+            "org.opensearch.dashboards.OpenSearchDashboardsModulePlugin", //
+            "org.opensearch.join.ParentJoinModulePlugin", //
+            "org.opensearch.percolator.PercolatorModulePlugin", //
+            "org.opensearch.index.rankeval.RankEvalModulePlugin", //
+            "org.opensearch.index.reindex.ReindexModulePlugin", //
+            "org.opensearch.plugin.repository.url.URLRepositoryModulePlugin", //
+            "org.opensearch.search.pipeline.common.SearchPipelineCommonModulePlugin", //
+            "org.opensearch.systemd.SystemdModulePlugin", //
+            "org.opensearch.transport.Netty4ModulePlugin" //
     };
 
     protected static final String DATA_DIR = "data";
@@ -515,8 +518,8 @@ public class OpenSearchRunner implements Closeable {
                 // LogConfigurator.setNodeName(Node.NODE_NAME_SETTING.get(environment.settings()));
                 LogConfigurator.configure(environment);
             }
-            createDir(environment.modulesFile());
-            createDir(environment.pluginsFile());
+            createDir(environment.modulesDir());
+            createDir(environment.pluginsDir());
 
             final OpenSearchRunnerNode node = new OpenSearchRunnerNode(
                     environment, moduleAndPluginList);
@@ -671,14 +674,14 @@ public class OpenSearchRunner implements Closeable {
     }
 
     /**
-     * Return a master node.
+     * Return a cluster manager node.
      *
      * @return master node
      */
-    public synchronized Node masterNode() {
+    public synchronized Node clusterManagerNode() {
         final ClusterState state = client().admin().cluster().prepareState()
                 .execute().actionGet().getState();
-        final String name = state.nodes().getMasterNode().getName();
+        final String name = state.nodes().getClusterManagerNode().getName();
         return getNode(name);
     }
 
@@ -687,10 +690,10 @@ public class OpenSearchRunner implements Closeable {
      *
      * @return non-master node
      */
-    public synchronized Node nonMasterNode() {
+    public synchronized Node nonClusterManagerNode() {
         final ClusterState state = client().admin().cluster().prepareState()
                 .execute().actionGet().getState();
-        final String name = state.nodes().getMasterNode().getName();
+        final String name = state.nodes().getClusterManagerNode().getName();
         for (final Node node : nodeList) {
             if (!node.isClosed()
                     && !name.equals(node.settings().get(NODE_NAME))) {
@@ -902,13 +905,13 @@ public class OpenSearchRunner implements Closeable {
         return actionGet;
     }
 
-    public AcknowledgedResponse closeIndex(final String index) {
+    public CloseIndexResponse closeIndex(final String index) {
         return closeIndex(index, builder -> builder);
     }
 
-    public AcknowledgedResponse closeIndex(final String index,
+    public CloseIndexResponse closeIndex(final String index,
             final BuilderCallback<CloseIndexRequestBuilder> builder) {
-        final AcknowledgedResponse actionGet = builder
+        final CloseIndexResponse actionGet = builder
                 .apply(client().admin().indices().prepareClose(index)).execute()
                 .actionGet();
         if (!actionGet.isAcknowledged()) {
@@ -1087,7 +1090,7 @@ public class OpenSearchRunner implements Closeable {
     }
 
     public synchronized <T> T getInstance(final Class<T> clazz) {
-        final Node node = masterNode();
+        final Node node = clusterManagerNode();
         return node.injector().getInstance(clazz);
     }
 
