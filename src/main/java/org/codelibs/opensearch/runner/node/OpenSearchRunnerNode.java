@@ -16,19 +16,30 @@
 package org.codelibs.opensearch.runner.node;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.stream.Collectors;
 
+import org.codelibs.opensearch.runner.OpenSearchRunnerException;
+import org.opensearch.Version;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.env.Environment;
 import org.opensearch.node.Node;
 import org.opensearch.plugins.Plugin;
+import org.opensearch.plugins.PluginInfo;
 
 public class OpenSearchRunnerNode extends Node {
 
     private final Collection<Class<? extends Plugin>> plugins;
 
-    public OpenSearchRunnerNode(final Environment tmpEnv,
-            final Collection<Class<? extends Plugin>> classpathPlugins) {
-        super(tmpEnv, classpathPlugins, true);
+    public OpenSearchRunnerNode(final Environment tmpEnv, final Collection<Class<? extends Plugin>> classpathPlugins) {
+        super(tmpEnv, classpathPlugins.stream().map(p -> {
+            try {
+                return new PluginInfo(p.getName(), "classpath plugin", "NA", Version.CURRENT, Integer.toString(Runtime.version().feature()),
+                        p.getName(), Collections.emptyList(), false);
+            } catch (final Exception e) {
+                throw new OpenSearchRunnerException("Failed to create PluginInfo for " + p.getName(), e);
+            }
+        }).collect(Collectors.toList()), true);
         this.plugins = classpathPlugins;
     }
 
@@ -37,8 +48,7 @@ public class OpenSearchRunnerNode extends Node {
     }
 
     @Override
-    protected void configureNodeAndClusterIdStateListener(
-            final ClusterService clusterService) {
+    protected void configureNodeAndClusterIdStateListener(final ClusterService clusterService) {
         // nothing
     }
 }
