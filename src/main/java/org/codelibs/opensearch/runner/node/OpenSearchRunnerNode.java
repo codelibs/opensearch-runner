@@ -27,10 +27,19 @@ import org.opensearch.node.Node;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.plugins.PluginInfo;
 
+/**
+ * Custom Node implementation for running OpenSearch instances in test environments.
+ */
 public class OpenSearchRunnerNode extends Node {
 
     private final Collection<Class<? extends Plugin>> plugins;
 
+    /**
+     * Constructs a new OpenSearchRunnerNode with the specified environment and plugins.
+     *
+     * @param tmpEnv the environment configuration
+     * @param classpathPlugins the collection of plugin classes to load
+     */
     public OpenSearchRunnerNode(final Environment tmpEnv, final Collection<Class<? extends Plugin>> classpathPlugins) {
         super(tmpEnv, classpathPlugins.stream().map(p -> {
             try {
@@ -43,6 +52,11 @@ public class OpenSearchRunnerNode extends Node {
         this.plugins = classpathPlugins;
     }
 
+    /**
+     * Gets the collection of plugin classes loaded by this node.
+     *
+     * @return the plugin classes
+     */
     public Collection<Class<? extends Plugin>> getPlugins() {
         return plugins;
     }
