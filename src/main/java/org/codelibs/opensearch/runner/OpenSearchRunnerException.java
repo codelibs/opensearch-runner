@@ -17,29 +17,55 @@ package org.codelibs.opensearch.runner;
 
 import org.opensearch.core.action.ActionResponse;
 
+/**
+ * Custom exception for OpenSearchRunner operations.
+ */
 public class OpenSearchRunnerException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
     private final transient ActionResponse response;
 
+    /**
+     * Constructs a new exception with the specified message and cause.
+     *
+     * @param message the detail message
+     * @param cause the cause of the exception
+     */
     public OpenSearchRunnerException(final String message,
             final Throwable cause) {
         super(message, cause);
         this.response = null;
     }
 
+    /**
+     * Constructs a new exception with the specified message.
+     *
+     * @param message the detail message
+     */
     public OpenSearchRunnerException(final String message) {
         super(message);
         this.response = null;
     }
 
+    /**
+     * Constructs a new exception with the specified message and response.
+     *
+     * @param message the detail message
+     * @param response the action response that caused the exception
+     */
     public OpenSearchRunnerException(final String message,
             final ActionResponse response) {
         super(message);
         this.response = response;
     }
 
+    /**
+     * Gets the action response associated with this exception.
+     *
+     * @param <T> the type of action response
+     * @return the action response, or null if none was provided
+     */
     @SuppressWarnings("unchecked")
     public <T extends ActionResponse> T getActionResponse() {
         return (T) response;
