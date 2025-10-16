@@ -21,7 +21,7 @@ OpenSearch Runner is a utility library that allows you to run OpenSearch cluster
 
 - Java 21 or higher
 - Maven 3.6 or higher
-- OpenSearch 3.2.0 (current development version)
+- OpenSearch 3.3.0 (current development version)
 
 ## Installation
 
@@ -33,7 +33,7 @@ Add the following dependency to your `pom.xml`:
 <dependency>
     <groupId>org.codelibs.opensearch</groupId>
     <artifactId>opensearch-runner</artifactId>
-    <version>3.2.0.0</version>
+    <version>3.3.0.0</version>
 </dependency>
 ```
 
@@ -43,7 +43,7 @@ For testing purposes, use `test` scope:
 <dependency>
     <groupId>org.codelibs.opensearch</groupId>
     <artifactId>opensearch-runner</artifactId>
-    <version>3.2.0.0</version>
+    <version>3.3.0.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -51,10 +51,10 @@ For testing purposes, use `test` scope:
 ### Gradle
 
 ```gradle
-implementation 'org.codelibs.opensearch:opensearch-runner:3.2.0.0'
+implementation 'org.codelibs.opensearch:opensearch-runner:3.3.0.0'
 
 // For testing
-testImplementation 'org.codelibs.opensearch:opensearch-runner:3.2.0.0'
+testImplementation 'org.codelibs.opensearch:opensearch-runner:3.3.0.0'
 ```
 
 ## Quick Start
