@@ -148,9 +148,11 @@ public class OpenSearchRunnerEdgeCasesTest {
 
         final String index = "test_index_callback";
 
-        runner.createIndex(index, settingsBuilder -> {
-            settingsBuilder.put("index.number_of_shards", 1);
-            settingsBuilder.put("index.number_of_replicas", 0);
+        runner.createIndex(index, builder -> {
+            return builder.setSettings(Settings.builder()
+                .put("index.number_of_shards", 1)
+                .put("index.number_of_replicas", 0)
+                .build());
         });
 
         runner.ensureYellow(index);
@@ -286,14 +288,14 @@ public class OpenSearchRunnerEdgeCasesTest {
         runner.build(newConfigs().clusterName(clusterName).numOfNode(1));
 
         // Ensure yellow
-        final ClusterHealthResponse yellowResponse = runner.ensureYellow();
-        assertNotNull(yellowResponse);
-        assertTrue(yellowResponse.getStatus() == ClusterHealthStatus.YELLOW ||
-                   yellowResponse.getStatus() == ClusterHealthStatus.GREEN);
+        final ClusterHealthStatus yellowStatus = runner.ensureYellow();
+        assertNotNull(yellowStatus);
+        assertTrue(yellowStatus == ClusterHealthStatus.YELLOW ||
+                   yellowStatus == ClusterHealthStatus.GREEN);
 
         // Ensure green (may not be achievable with 1 node and replicas)
-        final ClusterHealthResponse greenResponse = runner.ensureGreen();
-        assertNotNull(greenResponse);
+        final ClusterHealthStatus greenStatus = runner.ensureGreen();
+        assertNotNull(greenStatus);
     }
 
     @Test
@@ -326,9 +328,10 @@ public class OpenSearchRunnerEdgeCasesTest {
         runner.build(newConfigs().clusterName(clusterName).numOfNode(1));
         runner.ensureYellow();
 
-        final OpenSearchRunner instance = OpenSearchRunner.getInstance();
-        assertNotNull(instance);
-        assertEquals(runner, instance);
+        // Test getInstance with ClusterService class
+        final org.opensearch.cluster.service.ClusterService clusterService =
+                runner.getInstance(org.opensearch.cluster.service.ClusterService.class);
+        assertNotNull(clusterService);
     }
 
     @Test
@@ -484,7 +487,9 @@ public class OpenSearchRunnerEdgeCasesTest {
                 .field("value", 123)
                 .endObject();
 
-        final IndexResponse response = runner.insert(index, "1", source);
+        // Convert XContentBuilder to String
+        final String sourceString = org.opensearch.common.Strings.toString(source);
+        final IndexResponse response = runner.insert(index, "1", sourceString);
         assertNotNull(response);
 
         runner.refresh();
