@@ -235,6 +235,7 @@ public class OpenSearchRunnerNodeTest {
                 .put("node.name", nodeName)
                 .put("path.home", nodeDir.toString())
                 .put("http.port", "0")  // Random port
+                .put("transport.type", "netty4")
                 .put("transport.tcp.port", "0")  // Random port
                 .putList("discovery.seed_hosts", Collections.emptyList())
                 .putList("cluster.initial_cluster_manager_nodes", nodeName)

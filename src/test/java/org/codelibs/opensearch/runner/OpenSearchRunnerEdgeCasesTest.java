@@ -102,7 +102,6 @@ public class OpenSearchRunnerEdgeCasesTest {
 
         // Close index
         runner.closeIndex(index);
-        runner.ensureGreen();
 
         // Open index
         runner.openIndex(index);
