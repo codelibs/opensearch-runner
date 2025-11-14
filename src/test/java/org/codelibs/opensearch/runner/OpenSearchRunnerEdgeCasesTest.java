@@ -471,25 +471,19 @@ public class OpenSearchRunnerEdgeCasesTest {
     }
 
     @Test
-    public void testInsertWithSourceBuilder() throws Exception {
-        final String clusterName = "insert-builder-cluster-" + System.currentTimeMillis();
+    public void testInsertWithJsonString() throws Exception {
+        final String clusterName = "insert-json-cluster-" + System.currentTimeMillis();
         runner = new OpenSearchRunner();
         runner.build(newConfigs().clusterName(clusterName).numOfNode(1));
         runner.ensureYellow();
 
-        final String index = "test_insert_builder";
+        final String index = "test_insert_json";
         runner.createIndex(index, (Settings) null);
         runner.ensureYellow(index);
 
-        final XContentBuilder source = XContentFactory.jsonBuilder()
-                .startObject()
-                .field("name", "Test")
-                .field("value", 123)
-                .endObject();
-
-        // Convert XContentBuilder to String
-        final String sourceString = org.opensearch.common.Strings.toString(source);
-        final IndexResponse response = runner.insert(index, "1", sourceString);
+        // Insert document with JSON string
+        final String jsonDoc = "{\"name\":\"Test\",\"value\":123}";
+        final IndexResponse response = runner.insert(index, "1", jsonDoc);
         assertNotNull(response);
 
         runner.refresh();
