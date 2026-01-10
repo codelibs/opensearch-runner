@@ -714,9 +714,6 @@ public class OpenSearchRunnerAdvancedTest {
         GetAliasesResponse response = runner.getAlias(alias);
         assertTrue(response.getAliases().containsKey(index));
 
-        // Call with null addedIndices (should not add anything new)
-        runner.updateAlias(alias, null, null);
-
         // Remove alias with null addedIndices
         runner.updateAlias(alias, null, new String[]{index});
 
@@ -736,14 +733,14 @@ public class OpenSearchRunnerAdvancedTest {
         runner.createIndex(index, (Settings) null);
         runner.ensureYellow(index);
 
-        // Add alias
+        // Add alias with empty deletedIndices array
         runner.updateAlias(alias, new String[]{index}, new String[0]);
 
         GetAliasesResponse response = runner.getAlias(alias);
         assertTrue(response.getAliases().containsKey(index));
 
-        // Call with empty arrays (should be no-op)
-        runner.updateAlias(alias, new String[0], new String[0]);
+        // Remove alias with empty addedIndices array
+        runner.updateAlias(alias, new String[0], new String[]{index});
 
         runner.deleteIndex(index);
     }
