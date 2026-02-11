@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.codelibs.opensearch</groupId>
 	<artifactId>opensearch-runner</artifactId>
-	<version>3.5.0.0</version>
+	<version>3.5.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>OpenSearch Runner</name>
 	<description>OpenSearch Runner is a utility for running and managing OpenSearch clusters locally.</description>
@@ -32,7 +32,7 @@
 		<connection>scm:git:git@github.com:codelibs/opensearch-runner.git</connection>
 		<developerConnection>scm:git:git@github.com:codelibs/opensearch-runner.git</developerConnection>
 		<url>git@github.com:codelibs/opensearch-runner.git</url>
-	  <tag>opensearch-runner-3.5.0.0</tag>
+	  <tag>HEAD</tag>
   </scm>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
