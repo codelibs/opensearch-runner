@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.codelibs.opensearch</groupId>
 	<artifactId>opensearch-runner</artifactId>
-	<version>3.4.0.1-SNAPSHOT</version>
+	<version>3.5.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>OpenSearch Runner</name>
 	<description>OpenSearch Runner is a utility for running and managing OpenSearch clusters locally.</description>
@@ -36,9 +36,9 @@
   </scm>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<opensearch.version>3.4.0</opensearch.version>
+		<opensearch.version>3.5.0</opensearch.version>
 		<lucene.version>10.3.2</lucene.version>
-		<log4j.version>2.21.0</log4j.version>
+		<log4j.version>2.25.3</log4j.version>
 		<jna.version>5.16.0</jna.version>
 		<jts-core.version>1.15.0</jts-core.version>
 		<spatial4j.version>0.7</spatial4j.version>
