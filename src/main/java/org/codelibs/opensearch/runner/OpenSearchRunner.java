@@ -542,6 +542,17 @@ public class OpenSearchRunner implements Closeable {
                 builder.putList("node.roles", "cluster_manager", "data");
             }
 
+            // Single-node discovery configuration
+            if (numOfNode == 1) {
+                putIfAbsent(builder, "discovery.type", "single-node");
+            } else {
+                // For multi-node clusters, configure initial cluster manager nodes
+                // using the first node's name if not already set
+                if (!builder.keys().contains("cluster.initial_cluster_manager_nodes")) {
+                    builder.putList("cluster.initial_cluster_manager_nodes", "Node 1");
+                }
+            }
+
             print("Node Name:      " + nodeName);
             print("HTTP Port:      " + httpPort);
             print("Data Directory: " + dataPath);
