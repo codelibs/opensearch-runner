@@ -384,6 +384,11 @@ public class OpenSearchRunner implements Closeable {
             usingSwappedContextFactory = false;
             contextFactoryUsers--;
             if (contextFactoryUsers == 0 && originalContextFactory != null) {
+                // Stop the log4j-core context configured for this cluster while
+                // its factory is still reachable, so that its file appenders
+                // release their handles. Windows cannot delete open files, and
+                // clean() would fail to remove the log directory.
+                LogManager.shutdown();
                 LogManager.setFactory(originalContextFactory);
                 originalContextFactory = null;
             }

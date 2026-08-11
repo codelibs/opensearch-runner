@@ -102,10 +102,18 @@ public class OpenSearchRunnerLoggerContextFactoryTest extends TestCase {
                         + LogManager.getFactory().getClass().getName(),
                 LogManager.getFactory() instanceof Log4jContextFactory);
 
+        final org.apache.logging.log4j.core.LoggerContext clusterContext =
+                (org.apache.logging.log4j.core.LoggerContext) LogManager
+                        .getContext(false);
+
         runner.close();
 
         assertSame("The original factory must be restored on close",
                 foreignContextFactory, LogManager.getFactory());
+        assertFalse(
+                "The context configured for the cluster must be stopped, so that"
+                        + " its file appenders release their handles",
+                clusterContext.isStarted());
 
         runner.clean();
         runner = null;
