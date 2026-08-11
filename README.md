@@ -373,6 +373,41 @@ runner.build(newConfigs()
 
 Configure Log4j2 by placing a `log4j2.properties` file in your classpath.
 
+### Log4j2 provider conflicts
+
+OpenSearch requires log4j-core to be the active Log4j2 provider. A bridge such
+as `log4j-to-slf4j`, which Spring Boot pulls in through
+`spring-boot-starter-logging`, wins the provider lookup over log4j-core, and a
+node then fails to start with:
+
+```
+java.lang.ClassCastException: class org.apache.logging.slf4j.SLF4JLoggerContext
+cannot be cast to class org.apache.logging.log4j.core.LoggerContext
+```
+
+The provider is chosen by priority, so reordering dependencies does not help.
+This runner detects the conflict and installs log4j-core as the provider while
+a cluster is running, restoring the previous one in `close()`. No dependency
+exclusion or JVM argument is needed.
+
+While a cluster runs, logging through the Log4j2 API therefore goes to
+log4j-core rather than to SLF4J. Logging through the SLF4J API is unaffected.
+To keep the provider untouched instead, use `keepLoggerContextFactory()`:
+
+```java
+runner.build(newConfigs().keepLoggerContextFactory());
+```
+
+The cluster then only starts if log4j-core is already the active provider,
+which you can arrange by excluding `log4j-to-slf4j` from the test classpath, by
+adding `log4j2.component.properties` to it, or by passing the equivalent system
+property:
+
+```properties
+# log4j2.component.properties
+log4j2.loggerContextFactory=org.apache.logging.log4j.core.impl.Log4jContextFactory
+```
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
