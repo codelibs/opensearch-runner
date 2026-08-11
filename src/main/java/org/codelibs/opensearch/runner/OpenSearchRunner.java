@@ -40,6 +40,8 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.impl.Log4jContextFactory;
+import org.apache.logging.log4j.spi.LoggerContextFactory;
 import org.codelibs.opensearch.runner.node.OpenSearchRunnerNode;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -112,6 +114,15 @@ public class OpenSearchRunner implements Closeable {
 
     private static final Logger logger = LogManager
             .getLogger("opensearch.runner");
+
+    /** Guards the shared LoggerContextFactory state below. */
+    private static final Object CONTEXT_FACTORY_LOCK = new Object();
+
+    /** The LoggerContextFactory replaced by this runner, or null. */
+    private static LoggerContextFactory originalContextFactory;
+
+    /** Number of running instances which rely on the replaced factory. */
+    private static int contextFactoryUsers;
 
     private static final String NODE_NAME = "node.name";
 
@@ -209,6 +220,14 @@ public class OpenSearchRunner implements Closeable {
     @Option(name = "-disableESLogger", usage = "Disable ESLogger.")
     protected boolean disableESLogger = false;
 
+    /** Whether to keep a LoggerContextFactory not provided by log4j-core. */
+    @Option(name = "-keepLoggerContextFactory", //
+            usage = "Keep a Log4j2 LoggerContextFactory not provided by log4j-core.")
+    protected boolean keepLoggerContextFactory = false;
+
+    /** Whether this instance relies on the replaced LoggerContextFactory. */
+    protected boolean usingSwappedContextFactory = false;
+
     /** Whether to print stack traces on operation failures. */
     @Option(name = "-printOnFailure", usage = "Print an exception on a failure.")
     protected boolean printOnFailure = false;
@@ -283,18 +302,22 @@ public class OpenSearchRunner implements Closeable {
     @Override
     public void close() throws IOException {
         final List<IOException> exceptionList = new ArrayList<>();
-        for (final Node node : nodeList) {
-            try {
-                node.close();
-                if (!node.awaitClose(10, TimeUnit.SECONDS)) {
-                    print("Failed to close node: "
-                            + node.settings().get(NODE_NAME, "unknown"));
+        try {
+            for (final Node node : nodeList) {
+                try {
+                    node.close();
+                    if (!node.awaitClose(10, TimeUnit.SECONDS)) {
+                        print("Failed to close node: "
+                                + node.settings().get(NODE_NAME, "unknown"));
+                    }
+                } catch (final InterruptedException e) {
+                    logger.debug("Interupted closing process.", e);
+                } catch (final IOException e) {
+                    exceptionList.add(e);
                 }
-            } catch (final InterruptedException e) {
-                logger.debug("Interupted closing process.", e);
-            } catch (final IOException e) {
-                exceptionList.add(e);
             }
+        } finally {
+            restoreLoggerContextFactory();
         }
         if (!exceptionList.isEmpty()) {
             if (useLogger && logger.isDebugEnabled()) {
@@ -305,6 +328,71 @@ public class OpenSearchRunner implements Closeable {
             throw new IOException(exceptionList.toString());
         }
         print("Closed all nodes.");
+    }
+
+    /**
+     * Makes log4j-core the active Log4j2 provider, which OpenSearch requires.
+     * <p>
+     * A bridge such as log4j-to-slf4j wins the Log4j2 provider lookup over
+     * log4j-core, and OpenSearch then fails to start because it casts the
+     * context returned by {@code LogManager.getContext()} to
+     * {@code org.apache.logging.log4j.core.LoggerContext}. The replaced factory
+     * is restored by {@link #close()}.
+     *
+     * @throws OpenSearchRunnerException if log4j-core is not the active
+     *             provider and replacing it is disabled
+     */
+    protected void switchLoggerContextFactory() {
+        synchronized (CONTEXT_FACTORY_LOCK) {
+            if (originalContextFactory == null) {
+                final LoggerContextFactory factory = LogManager.getFactory();
+                if (factory instanceof Log4jContextFactory) {
+                    return;
+                }
+                if (keepLoggerContextFactory) {
+                    throw new OpenSearchRunnerException(
+                            "OpenSearch requires log4j-core as a Log4j2 provider,"
+                                    + " but " + factory.getClass().getName()
+                                    + " is active. Remove -keepLoggerContextFactory"
+                                    + " to let this runner replace it while a cluster"
+                                    + " is running, or set -Dlog4j2.loggerContextFactory="
+                                    + Log4jContextFactory.class.getName()
+                                    + " (log4j2.component.properties is also read),"
+                                    + " or exclude log4j-to-slf4j from the classpath.");
+                }
+                print("Replacing Log4j2 LoggerContextFactory "
+                        + factory.getClass().getName() + " with "
+                        + Log4jContextFactory.class.getName()
+                        + " while this cluster is running.");
+                originalContextFactory = factory;
+                LogManager.setFactory(new Log4jContextFactory());
+            }
+            contextFactoryUsers++;
+            usingSwappedContextFactory = true;
+        }
+    }
+
+    /**
+     * Restores the LoggerContextFactory replaced by
+     * {@link #switchLoggerContextFactory()} once no instance relies on it.
+     */
+    protected void restoreLoggerContextFactory() {
+        synchronized (CONTEXT_FACTORY_LOCK) {
+            if (!usingSwappedContextFactory) {
+                return;
+            }
+            usingSwappedContextFactory = false;
+            contextFactoryUsers--;
+            if (contextFactoryUsers == 0 && originalContextFactory != null) {
+                // Stop the log4j-core context configured for this cluster while
+                // its factory is still reachable, so that its file appenders
+                // release their handles. Windows cannot delete open files, and
+                // clean() would fail to remove the log directory.
+                LogManager.shutdown();
+                LogManager.setFactory(originalContextFactory);
+                originalContextFactory = null;
+            }
+        }
     }
 
     /**
@@ -366,6 +454,8 @@ public class OpenSearchRunner implements Closeable {
             }
         }
 
+        switchLoggerContextFactory();
+
         if (basePath == null) {
             try {
                 basePath = Files.createTempDirectory("opensearch-cluster")
@@ -411,8 +501,13 @@ public class OpenSearchRunner implements Closeable {
         print("Base Path:    " + basePath);
         print("Num Of Node:  " + numOfNode);
 
-        for (int i = 0; i < numOfNode; i++) {
-            execute(i + 1);
+        try {
+            for (int i = 0; i < numOfNode; i++) {
+                execute(i + 1);
+            }
+        } catch (final RuntimeException e) {
+            restoreLoggerContextFactory();
+            throw e;
         }
     }
 
@@ -1611,6 +1706,17 @@ public class OpenSearchRunner implements Closeable {
          */
         public Configs disableESLogger() {
             configList.add("-disableESLogger");
+            return this;
+        }
+
+        /**
+         * Keeps a Log4j2 LoggerContextFactory which is not provided by
+         * log4j-core instead of replacing it while a cluster is running.
+         *
+         * @return this Configs instance for method chaining
+         */
+        public Configs keepLoggerContextFactory() {
+            configList.add("-keepLoggerContextFactory");
             return this;
         }
 
