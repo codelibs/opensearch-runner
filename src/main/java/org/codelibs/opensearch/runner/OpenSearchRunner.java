@@ -102,7 +102,7 @@ import org.opensearch.transport.client.AdminClient;
 import org.opensearch.transport.client.Client;
 import org.opensearch.transport.client.Requests;
 
-import com.fasterxml.jackson.dataformat.smile.SmileConstants;
+import tools.jackson.dataformat.smile.SmileConstants;
 
 /**
  * OpenSearchRunner manages multiple OpenSearch instances.
