@@ -60,6 +60,7 @@ public class OpenSearchRunnerTest extends TestCase {
             public void build(final int number, final Builder settingsBuilder) {
                 settingsBuilder.put("http.cors.enabled", true);
                 settingsBuilder.put("http.cors.allow-origin", "*");
+                settingsBuilder.put("cluster.routing.allocation.disk.threshold_enabled", false);
                 settingsBuilder.putList("discovery.seed_hosts", "127.0.0.1:9301", "127.0.0.1:9302");
                 settingsBuilder.putList("cluster.initial_cluster_manager_nodes", "127.0.0.1:9301");
             }
