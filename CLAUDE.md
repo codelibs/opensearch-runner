@@ -78,7 +78,7 @@ Tests use JUnit 4 and follow the pattern:
 
 ## Dependencies
 
-- OpenSearch 3.9.0
-- Lucene 10.5.1
+- OpenSearch 3.10.0
+- Lucene 10.6.0
 - Log4j 2.25.4
 - Java 21 required
